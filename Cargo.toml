@@ -1,0 +1,10 @@
+[package]
+name = "midi-shenanigans"
+version = "0.1.0"
+authors = ["Yui <yui.github@mailbox.org>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+midir = "0.7.0"
