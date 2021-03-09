@@ -130,7 +130,7 @@ checksum = "df39d232f5c40b0891c10216992c2f250c054105cb1e56f0fc9032db6203ecc1"
 
 [[package]]
 name = "midi-shenanigans"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "midir",
 ]

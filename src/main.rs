@@ -21,9 +21,16 @@ fn forward_port() -> Result<(), Box<dyn Error>> {
     let outp_port_name = midi_out.port_name(&outp_port)?;
     println!("\nForwarding ports....");
     let mut conn_out = midi_out.connect(&outp_port, &outp_port_name)?;
-    let _conn_in = midi_in.connect(&inp_port, &inp_port_name, move |_, message, _ | {
-        conn_out.send(message).unwrap_or_else(|_| { println!("WTF") });
-    }, ());
+    let _conn_in = midi_in.connect(
+        &inp_port,
+        &inp_port_name,
+        move |_, message, _| {
+            conn_out
+                .send(message)
+                .unwrap_or_else(|_| println!("Error sending this message"));
+        },
+        (),
+    );
     println!("Press enter to exit...");
     let mut inp_buffer = String::new();
     stdin().read_line(&mut inp_buffer)?;
