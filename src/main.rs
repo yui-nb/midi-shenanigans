@@ -80,7 +80,7 @@ fn forward_port() -> Result<(), Box<dyn Error>> {
 
 fn listen_to_port() -> Result<(), Box<dyn Error>> {
     let mut midi_in = MidiInput::new("MIDI Input")?;
-    midi_in.ignore(Ignore::None);
+    midi_in.ignore(get_ignore()?);
     let inp_port = select_port(&midi_in, "input")?;
     let inp_port_name = midi_in.port_name(&inp_port)?;
     println!("\nConnecting....");
@@ -102,6 +102,37 @@ fn listen_to_port() -> Result<(), Box<dyn Error>> {
     stdin().read_line(&mut inp_buffer)?;
     println!("Closing connection....");
     Ok(())
+}
+
+fn get_ignore() -> Result<Ignore, Box<dyn Error>> {
+    println!("Which Messages do you wan't to ignore?");
+    println!("1: None, 2: SysEx, 3: Time, 4: SysEx and Time, 5: ActiveSense, 6: SysEx and ActiveSense
+7: TimeAndActiveSense, 8: All");
+    let mut inp_buffer = String::new();
+    stdin().read_line(&mut inp_buffer)?;
+    match inp_buffer.trim().parse::<usize>() {
+        Ok(val) => {
+            match val {
+                1 => Ok(Ignore::None),
+                2 => Ok(Ignore::Sysex),
+                3 => Ok(Ignore::Time),
+                4 => Ok(Ignore::SysexAndTime),
+                5 => Ok(Ignore::ActiveSense),
+                6 => Ok(Ignore::SysexAndActiveSense),
+                7 => Ok(Ignore::TimeAndActiveSense),
+                8 => Ok(Ignore::All),
+                _ => {
+                    println!("Input out of range. Choosing None as default");
+                    Ok(Ignore::None)
+                },
+            }
+        }
+        Err(_) => {
+            println!("Could not parse Input. Chosing None as default!");
+            Ok(Ignore::None)
+        }
+    }
+    //Ok(Ignore::None)
 }
 
 fn select_port<T: MidiIO>(midi_io: &T, descr: &str) -> Result<T::Port, Box<dyn Error>> {
