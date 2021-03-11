@@ -1,6 +1,6 @@
 [package]
 name = "midi-shenanigans"
-version = "0.1.0"
+version = "0.0.1"
 authors = ["Yui <yui.github@mailbox.org>"]
 edition = "2018"
 
@@ -8,3 +8,5 @@ edition = "2018"
 
 [dependencies]
 midir = "0.7.0"
+wmidi = "4.0.4"
+clap = "2.33.3"
