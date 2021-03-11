@@ -1,14 +1,55 @@
+use std::convert::TryFrom;
 use std::error::Error;
 use std::io::{stdin, stdout, Write};
 
 use midir::{Ignore, MidiIO, MidiInput, MidiOutput};
+use wmidi::{FromBytesError, MidiMessage};
 
 fn main() {
     println!("MIDI Shenanigans Version: 0.0.1\n");
-    match forward_port() {
-        Ok(_) => println!("All good! Goodbye..."),
-        Err(e) => println!("DAVE COURTNEY'S ILLEGAL ERROR: {}", e),
+    match listen_to_port() {
+        Ok(_) => (),
+        Err(e) => {
+            println!("Error: {}", e)
+        }
     }
+}
+
+fn print_midi_message(midi_message: &[u8]) -> Result<(), FromBytesError> {
+    use MidiMessage::*;
+    let message = wmidi::MidiMessage::try_from(midi_message)?;
+    match message {
+        NoteOff(_, _, _) => {
+            println!("Note off:");
+        }
+        NoteOn(channel, note, velocity) => {
+            println!("Note on:");
+            println!(
+                "Channel: {:?} | Note: {:?} | Velocity: {}",
+                channel,
+                note,
+                u8::from(velocity)
+            );
+        }
+        PitchBendChange(channel, pitch_bend) => {
+            println!("Pitch Bend Change:");
+            println!("Channel: {:?} | Value: {}", channel, u16::from(pitch_bend));
+        }
+        ControlChange(channel, function, value) => {
+            // TODO:: Implement Function to decode ControlFunction and to Map ControlFunctions
+            // Maybe read Mapping form text file
+            println!("Control Change:");
+            println!("Channel: {:?} | Function: {} | Value: {}", channel, u8::from(function), u8::from(value));
+        }
+        SysEx(message) => {
+            println!("System Exclusive Message: {:?}", message);
+        }
+        TimingClock => {
+            println!("CLOCK");
+        }
+        _ => println!("Placeholder..."),
+    }
+    Ok(())
 }
 
 fn forward_port() -> Result<(), Box<dyn Error>> {
@@ -47,7 +88,13 @@ fn listen_to_port() -> Result<(), Box<dyn Error>> {
         &inp_port,
         &inp_port_name,
         move |stamp, message, _| {
-            println!("{}: {:?} (len = {})", stamp, message, message.len());
+            //println!("{}: {:?} (len = {})", stamp, message, message.len());
+            match print_midi_message(&message) {
+                Ok(_) => {}
+                Err(e) => {
+                    println!("Error parsing MIDI Message: {}", e);
+                }
+            }
         },
         (),
     )?;
