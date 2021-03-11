@@ -2,16 +2,22 @@ use std::convert::TryFrom;
 use std::error::Error;
 use std::io::{stdin, stdout, Write};
 
+use clap::{App, SubCommand};
 use midir::{Ignore, MidiIO, MidiInput, MidiOutput};
 use wmidi::{FromBytesError, MidiMessage};
 
 fn main() {
-    println!("MIDI Shenanigans Version: 0.0.1\n");
-    match listen_to_port() {
-        Ok(_) => (),
-        Err(e) => {
-            println!("Error: {}", e)
-        }
+    let matches = App::new("MIDI Shenanigans built around the KORG NTS-1 digital Synthesizer")
+        .version("0.0.1")
+        .author("Yui E. <yui.github@mailbox.org>")
+        .about("Doing stuff with MIDI")
+        .subcommand(SubCommand::with_name("listen").about("Listen to the input of a MIDI Device"))
+        .subcommand(SubCommand::with_name("forward").about("Forward MIDI Ports"))
+        .get_matches();
+    match matches.subcommand_name() {
+        Some("forward") => forward_port().unwrap_or_else(|e| println!("Error: {}", e)),
+        Some("listen") => listen_to_port().unwrap_or_else(|e| println!("Error: {}", e)),
+        _ => println!("No command supplied. Exiting."),
     }
 }
 
@@ -39,7 +45,12 @@ fn print_midi_message(midi_message: &[u8]) -> Result<(), FromBytesError> {
             // TODO:: Implement Function to decode ControlFunction and to Map ControlFunctions
             // Maybe read Mapping form text file
             println!("Control Change:");
-            println!("Channel: {:?} | Function: {} | Value: {}", channel, u8::from(function), u8::from(value));
+            println!(
+                "Channel: {:?} | Function: {} | Value: {}",
+                channel,
+                u8::from(function),
+                u8::from(value)
+            );
         }
         SysEx(message) => {
             println!("System Exclusive Message: {:?}", message);
@@ -87,7 +98,7 @@ fn listen_to_port() -> Result<(), Box<dyn Error>> {
     let _conn_in = midi_in.connect(
         &inp_port,
         &inp_port_name,
-        move |stamp, message, _| {
+        move |_stamp, message, _| {
             //println!("{}: {:?} (len = {})", stamp, message, message.len());
             match print_midi_message(&message) {
                 Ok(_) => {}
@@ -106,27 +117,27 @@ fn listen_to_port() -> Result<(), Box<dyn Error>> {
 
 fn get_ignore() -> Result<Ignore, Box<dyn Error>> {
     println!("Which Messages do you wan't to ignore?");
-    println!("1: None, 2: SysEx, 3: Time, 4: SysEx and Time, 5: ActiveSense, 6: SysEx and ActiveSense
-7: TimeAndActiveSense, 8: All");
+    println!(
+        "1: None, 2: SysEx, 3: Time, 4: SysEx and Time, 5: ActiveSense, 6: SysEx and ActiveSense
+7: TimeAndActiveSense, 8: All"
+    );
     let mut inp_buffer = String::new();
     stdin().read_line(&mut inp_buffer)?;
     match inp_buffer.trim().parse::<usize>() {
-        Ok(val) => {
-            match val {
-                1 => Ok(Ignore::None),
-                2 => Ok(Ignore::Sysex),
-                3 => Ok(Ignore::Time),
-                4 => Ok(Ignore::SysexAndTime),
-                5 => Ok(Ignore::ActiveSense),
-                6 => Ok(Ignore::SysexAndActiveSense),
-                7 => Ok(Ignore::TimeAndActiveSense),
-                8 => Ok(Ignore::All),
-                _ => {
-                    println!("Input out of range. Choosing None as default");
-                    Ok(Ignore::None)
-                },
+        Ok(val) => match val {
+            1 => Ok(Ignore::None),
+            2 => Ok(Ignore::Sysex),
+            3 => Ok(Ignore::Time),
+            4 => Ok(Ignore::SysexAndTime),
+            5 => Ok(Ignore::ActiveSense),
+            6 => Ok(Ignore::SysexAndActiveSense),
+            7 => Ok(Ignore::TimeAndActiveSense),
+            8 => Ok(Ignore::All),
+            _ => {
+                println!("Input out of range. Choosing None as default");
+                Ok(Ignore::None)
             }
-        }
+        },
         Err(_) => {
             println!("Could not parse Input. Chosing None as default!");
             Ok(Ignore::None)
